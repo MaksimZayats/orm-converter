@@ -1,1 +1,1 @@
-from converter import IConverter, TortoiseToDjango
+from .converter import IConverter, TortoiseToDjango
