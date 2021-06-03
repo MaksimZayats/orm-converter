@@ -1,7 +1,6 @@
 import inspect
 import logging
 import os
-
 from abc import ABC, abstractmethod
 from functools import lru_cache
 from types import ModuleType
@@ -12,7 +11,6 @@ from django.core.exceptions import ImproperlyConfigured
 from django.db import models as django_models
 from django.db.models import Model as DjangoModel, Field as DjangoField, NOT_PROVIDED
 from django.db.models import fields as django_fields
-
 from tortoise import Model as TortoiseModel
 from tortoise import fields as tortoise_fields
 from tortoise.fields import Field as TortoiseField
@@ -61,30 +59,30 @@ class TortoiseToDjango(IConverter):
     @lru_cache
     def convert(cls, model: Type[TortoiseModel],
                 app_name: Optional[str] = None,
-                models_file: Optional[str] = None,
+                model_file: Optional[str] = None,
                 **fields: DjangoField
                 ) -> Optional[Type[DjangoModel]]:
         from_file = inspect.getfile(inspect.currentframe().f_back)
-        _app_name = app_name or from_file.split(os.sep)[-2]
-        _models_file_name = models_file or from_file.split(os.sep)[-1]
+        app_label = app_name or from_file.split(os.sep)[-2]
+        model_file_name = model_file or from_file.split(os.sep)[-1]
 
-        _fields: Dict[str, DjangoField] = {}
+        tortoise_model_meta = model._meta
 
-        for field_name, field_type in model._meta.fields_map.items():
-            if field_name == 'id' and model._meta.pk is field_type:
+        for field_name, field_type in tortoise_model_meta.fields_map.items():
+            if field_name == 'id' and tortoise_model_meta.pk is field_type:
                 continue
             if field_name not in fields:
-                _fields[field_name] = cls._get_django_field(field_type)
+                fields[field_name] = cls._get_django_field(field_type)
 
-        _fields |= fields
+        django_meta = cls._generate_django_model_meta(
+            app_label=app_label, tortoise_meta=model.Meta)
 
         try:
             return cls._generate_django_model(
                 model_name=model.__name__,
-                app_name=_app_name,
-                models_file=_models_file_name,
-                db_table=model._meta.db_table,
-                fields=_fields)
+                model_file=model_file_name,
+                model_meta=django_meta,
+                fields=fields)
         except ImproperlyConfigured:
             return None
 
@@ -95,11 +93,11 @@ class TortoiseToDjango(IConverter):
                             app_name: Optional[str] = None,
                             models_file: Optional[str] = None
                             ) -> List[Optional[Type[DjangoModel]]]:
-        _converter_models: List[DjangoModel] = []
+        _converter_models: List[Type[DjangoModel]] = []
 
         from_file = inspect.getfile(inspect.currentframe().f_back)
-        _app_name = app_name or from_file.split(os.sep)[-2]
-        _models_file_name = models_file or from_file.split(os.sep)[-1]
+        app_label = app_name or from_file.split(os.sep)[-2]
+        models_file_name = models_file or from_file.split(os.sep)[-1]
 
         module_members = inspect.getmembers(module)
         for member in module_members:
@@ -112,37 +110,39 @@ class TortoiseToDjango(IConverter):
                         _converter_models.append(
                             cls.convert(
                                 model=member[1],
-                                app_name=_app_name,
-                                models_file=_models_file_name))
+                                app_name=app_label,
+                                model_file=models_file_name))
         return _converter_models
 
     @classmethod
     def _generate_django_model(cls, model_name: str,
-                               app_name: str,
-                               db_table: str,
                                fields: Dict[str, DjangoField],
-                               models_file: str = 'models') -> Type[DjangoModel]:
-        models_file = models_file.rstrip('.py')
-        meta = cls._generate_django_model_meta(
-            db_table=db_table, app_label=app_name)
+                               model_meta: Type['DjangoModel.Meta'],
+                               model_file: str = 'models') -> Type[DjangoModel]:
+        model_file = model_file.rstrip('.py')
 
         django_model_attrs = {
-            '__module__': f'{app_name}.{models_file}',
-            'Meta': meta,
+            '__module__': f'{model_meta.app_label}.{model_file}',
+            'Meta': model_meta,
             **fields
         }
 
         return type(model_name, (DjangoModel,), django_model_attrs)  # type: ignore
 
     @classmethod
-    def _generate_django_model_meta(cls, db_table: str,
-                                    app_label: str) -> 'DjangoModel.Meta':
-        _db_table = db_table
-        _app_label = app_label
-
+    def _generate_django_model_meta(cls, app_label: str,
+                                    tortoise_meta: Type[TortoiseModel.Meta]
+                                    ) -> Type['DjangoModel.Meta']:
         class Meta:
-            db_table = _db_table
-            app_label = _app_label
+            db_table = getattr(tortoise_meta, 'table')
+
+        Meta.app_label = app_label
+
+        if getattr(tortoise_meta, 'verbose_name', None):
+            Meta.verbose_name = getattr(tortoise_meta, 'verbose_name')
+
+        if getattr(tortoise_meta, 'verbose_name_plural', None):
+            Meta.verbose_name_plural = getattr(tortoise_meta, 'verbose_name_plural')
 
         return Meta
 
