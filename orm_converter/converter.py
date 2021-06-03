@@ -62,7 +62,8 @@ class TortoiseToDjango(IConverter):
     def convert(cls, model: Type[TortoiseModel],
                 app_name: Optional[str] = None,
                 models_file: Optional[str] = None,
-                **fields: DjangoField) -> Optional[Type[DjangoModel]]:
+                **fields: DjangoField
+                ) -> Optional[Type[DjangoModel]]:
         from_file = inspect.getfile(inspect.currentframe().f_back)
         _app_name = app_name or from_file.split(os.sep)[-2]
         _models_file_name = models_file or from_file.split(os.sep)[-1]
@@ -92,7 +93,10 @@ class TortoiseToDjango(IConverter):
     def convert_from_module(cls, module: ModuleType,
                             exclude_models: List[Type[TortoiseModel]] = None,
                             app_name: Optional[str] = None,
-                            models_file: Optional[str] = None):
+                            models_file: Optional[str] = None
+                            ) -> List[Optional[Type[DjangoModel]]]:
+        _converter_models: List[DjangoModel] = []
+
         from_file = inspect.getfile(inspect.currentframe().f_back)
         _app_name = app_name or from_file.split(os.sep)[-2]
         _models_file_name = models_file or from_file.split(os.sep)[-1]
@@ -105,10 +109,12 @@ class TortoiseToDjango(IConverter):
                 if type(member[1]) is ModelMeta:
                     if getattr(member[1], '_meta', {}) and \
                             getattr(member[1]._meta, 'fields_map', {}):
-                        cls.convert(
-                            model=member[1],
-                            app_name=_app_name,
-                            models_file=_models_file_name)
+                        _converter_models.append(
+                            cls.convert(
+                                model=member[1],
+                                app_name=_app_name,
+                                models_file=_models_file_name))
+        return _converter_models
 
     @classmethod
     def _generate_django_model(cls, model_name: str,
