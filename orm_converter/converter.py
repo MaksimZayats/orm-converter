@@ -20,7 +20,7 @@ from tortoise.fields import relational
 from tortoise.fields.relational import RelationalField as RelationalTortoiseField
 from tortoise.models import ModelMeta
 
-from utils import _dict_intersection
+from .utils import _dict_intersection
 
 
 logging.basicConfig(level=logging.DEBUG)
