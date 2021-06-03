@@ -1,4 +1,4 @@
-def _dict_intersection(*dicts: dict) -> dict:
+def dict_intersection(*dicts: dict) -> dict:
     comm_keys = dicts[0].keys()
     for _dict in dicts[1:]:
         comm_keys &= _dict.keys()

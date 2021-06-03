@@ -18,7 +18,7 @@ from tortoise.fields import relational
 from tortoise.fields.relational import RelationalField as RelationalTortoiseField
 from tortoise.models import ModelMeta
 
-from .utils import _dict_intersection
+from ._utils import dict_intersection
 
 
 class IConverter(ABC):
@@ -180,7 +180,7 @@ class TortoiseToDjango(IConverter):
             set(inspect.getfullargspec(django_field).args) |\
             set(inspect.getfullargspec(DjangoField).args)
 
-        kwargs = _dict_intersection(tortoise_field.__dict__, dict(zip(args, args)))
+        kwargs = dict_intersection(tortoise_field.__dict__, dict(zip(args, args)))
 
         logging.debug(f'Create Field\n'
                       f'Tortoise Field: {tortoise_field}\n'
