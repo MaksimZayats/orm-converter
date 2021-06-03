@@ -23,9 +23,6 @@ from tortoise.models import ModelMeta
 from .utils import _dict_intersection
 
 
-logging.basicConfig(level=logging.DEBUG)
-
-
 class IConverter(ABC):
     @classmethod
     @abstractmethod
@@ -133,7 +130,7 @@ class TortoiseToDjango(IConverter):
 
     @classmethod
     def _generate_django_model_meta(cls, db_table: str,
-                                    app_label: str) -> DjangoModel.Meta:
+                                    app_label: str) -> 'DjangoModel.Meta':
         _db_table = db_table
         _app_label = app_label
 
@@ -157,7 +154,7 @@ class TortoiseToDjango(IConverter):
 
         if isinstance(tortoise_field, RelationalTortoiseField):
             tortoise_field.to = getattr(tortoise_field, 'model_name').split('.')[1]
-            tortoise_field.on_delete = _get_on_delete_function(tortoise_field.on_delete)  # type: ignore
+            tortoise_field.on_delete = cls._get_on_delete_function(tortoise_field.on_delete)  # type: ignore
 
         tortoise_field.primary_key = getattr(tortoise_field, 'pk', False)
         tortoise_field.verbose_name = getattr(tortoise_field, 'description', None)
@@ -182,7 +179,6 @@ class TortoiseToDjango(IConverter):
         logging.debug(f'Create Field\n'
                       f'Tortoise Field: {tortoise_field}\n'
                       f'New Field args: {kwargs}\n')
-        print(django_field(**kwargs).validators)
 
         return django_field(**kwargs)
 
