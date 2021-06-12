@@ -176,13 +176,8 @@ class TortoiseToDjango(IConverter):
         if getattr(tortoise_field, 'default') is None:
             tortoise_field.default = NOT_PROVIDED
 
-        '''
-        if tortoise_field.validators:
-            # tortoise_field.validators = []
-            tortoise_field.validators = \
-                [validator.__call__ for validator in tortoise_field.validators]
-        '''
-        delattr(tortoise_field, 'validators')
+        if hasattr(tortoise_field, 'validators'):
+            delattr(tortoise_field, 'validators')
 
         args =\
             set(inspect.getfullargspec(django_field).args) |\
