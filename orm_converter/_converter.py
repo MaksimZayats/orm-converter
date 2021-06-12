@@ -88,7 +88,8 @@ class TortoiseToDjango(IConverter):
 
     @classmethod
     @lru_cache
-    def convert_from_module(cls, module: ModuleType,
+    def convert_from_module(cls, module: Optional[ModuleType] = None,
+                            from_current_file: bool = False,
                             exclude_models: List[Type[TortoiseModel]] = None,
                             app_name: Optional[str] = None,
                             models_file: Optional[str] = None
@@ -99,7 +100,13 @@ class TortoiseToDjango(IConverter):
         app_label = app_name or from_file.split(os.sep)[-2]
         models_file_name = models_file or from_file.split(os.sep)[-1]
 
-        module_members = inspect.getmembers(module)
+        if module is not None:
+            module_members = inspect.getmembers(module)
+        elif from_current_file:
+            module_members = inspect.getmembers(inspect.currentframe().f_back.__module__)
+        else:
+            raise ValueError('')
+
         for member in module_members:
             if exclude_models and member[1] in exclude_models:
                 continue
