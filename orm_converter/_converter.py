@@ -103,7 +103,8 @@ class TortoiseToDjango(IConverter):
         if module is not None:
             module_members = inspect.getmembers(module)
         elif from_current_file:
-            module_members = inspect.getmembers(inspect.currentframe().f_back.__module__)
+            module = inspect.getmodule(inspect.currentframe().f_back)
+            module_members = inspect.getmembers(module)
         else:
             raise ValueError('')
 
