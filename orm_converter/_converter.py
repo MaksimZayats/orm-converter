@@ -17,6 +17,7 @@ from tortoise.fields import Field as TortoiseField
 from tortoise.fields import relational
 from tortoise.fields.relational import RelationalField as RelationalTortoiseField
 from tortoise.models import ModelMeta
+from .exceptions import ConfigurationError, FieldIsNotSupported
 
 from ._utils import dict_intersection
 
@@ -175,8 +176,9 @@ class TortoiseToDjango(IConverter):
             if from_current_module:
                 module = inspect.getmodule(inspect.currentframe().f_back)
             else:
-                # TODO: replace with custom exception
-                raise ValueError('You must specify either "module" or "from_current_module"')
+                raise ConfigurationError(
+                    'You must specify either "module" or "from_current_module"'
+                )
 
         for member in inspect.getmembers(module):
             if member[1] in exclude_models:
@@ -230,7 +232,7 @@ class TortoiseToDjango(IConverter):
     def _get_django_field_type(cls, tortoise_field: TortoiseField) -> Type[DjangoField]:
         field = cls.FIELDS_RATIO.get(type(tortoise_field))
         if field is None:
-            raise ValueError(f'{tortoise_field} is not supported')
+            raise FieldIsNotSupported(f'{tortoise_field} is not supported')
 
         return field
 
