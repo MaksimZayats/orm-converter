@@ -69,12 +69,9 @@ class TortoiseToDjango(IConverter):
                 ) -> Optional[Type[DjangoModel]]:
         """
         Convert TortoiseModel to DjangoModel.
-
-        :param model:
-            Tortoise model to convert.
+        :param model: Tortoise model to convert.
         :param convert_to_same_module:
-            If "True" models will be converted to the same module:
-            "app_name", "model_file", "module_name" will be equal to the value from the model module.
+            If ``True`` models will be converted to the same module.
         :param app_name:
             App name for Django App.
             By default, this is the name of the folder from which the function is called.
@@ -84,8 +81,7 @@ class TortoiseToDjango(IConverter):
         :param module_name:
             Module name to Django Model file.
             Default: {app_name}.{models_file}
-        :param fields:
-            Redefined or additional DjangoModel fields.
+        :param fields: Redefined or additional DjangoModel fields.
 
         :return: DjangoModel or None.
         """
@@ -190,7 +186,6 @@ class TortoiseToDjango(IConverter):
                                fields: Dict[str, DjangoField],
                                model_meta: Type['DjangoModel.Meta'],
                                module_name: str) -> Type[DjangoModel]:
-
         django_model_attrs = {
             '__module__': module_name,
             'Meta': model_meta,
@@ -220,7 +215,6 @@ class TortoiseToDjango(IConverter):
     @classmethod
     def _get_django_field_type(cls, tortoise_field: TortoiseField) -> Type[DjangoField]:
         field = cls.FIELDS_RATIO.get(type(tortoise_field))
-
         if field is None:
             raise ValueError(f'{tortoise_field} is not supported')
 
@@ -229,31 +223,29 @@ class TortoiseToDjango(IConverter):
     @classmethod
     def _get_django_field(cls, tortoise_field: TortoiseField) -> DjangoField:
         django_field = cls._get_django_field_type(tortoise_field)
+        django_field_kwargs = {**tortoise_field.__dict__}
 
         if isinstance(tortoise_field, RelationalTortoiseField):
-            tortoise_field.to = getattr(tortoise_field, 'model_name')
-            tortoise_field.on_delete = cls._get_on_delete_function(tortoise_field.on_delete)  # type: ignore
+            django_field_kwargs['to'] = getattr(tortoise_field, 'model_name')
+            django_field_kwargs['on_delete'] = cls._get_on_delete_function(tortoise_field.on_delete)  # type: ignore
 
-        tortoise_field.primary_key = getattr(tortoise_field, 'pk', False)
-        tortoise_field.verbose_name = getattr(tortoise_field, 'description', None)
+        django_field_kwargs['primary_key'] = getattr(tortoise_field, 'pk', False)
+        django_field_kwargs['verbose_name'] = getattr(tortoise_field, 'description', None)
 
         if getattr(tortoise_field, 'default') is None:
-            tortoise_field.default = NOT_PROVIDED
-
-        if hasattr(tortoise_field, 'validators'):
-            delattr(tortoise_field, 'validators')
+            django_field_kwargs['default'] = NOT_PROVIDED
 
         args =\
             set(inspect.getfullargspec(django_field).args) |\
             set(inspect.getfullargspec(DjangoField).args)
 
-        kwargs = dict_intersection(tortoise_field.__dict__, dict(zip(args, args)))
+        django_field_kwargs = dict_intersection(django_field_kwargs, dict(zip(args, args)))
 
         logging.debug(f'Create Field\n'
                       f'Tortoise Field: {tortoise_field}\n'
-                      f'New Field args: {kwargs}\n')
+                      f'New Field args: {django_field_kwargs}\n')
 
-        return django_field(**kwargs)
+        return django_field(**django_field_kwargs)
 
     @classmethod
     def _get_on_delete_function(cls, function_name: str) -> callable:
