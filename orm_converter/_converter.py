@@ -69,7 +69,9 @@ class TortoiseToDjango(IConverter):
                 ) -> Optional[Type[DjangoModel]]:
         """
         Convert TortoiseModel to DjangoModel.
-        :param model: Tortoise model to convert.
+
+        :param model:
+            Tortoise model to convert.
         :param convert_to_same_module:
             If ``True`` models will be converted to the same module.
         :param app_name:
@@ -81,7 +83,8 @@ class TortoiseToDjango(IConverter):
         :param module_name:
             Module name to Django Model file.
             Default: {app_name}.{models_file}
-        :param fields: Redefined or additional DjangoModel fields.
+        :param fields:
+            Redefined or additional DjangoModel fields.
 
         :return: DjangoModel or None.
         """
@@ -144,16 +147,27 @@ class TortoiseToDjango(IConverter):
                             module_name: Optional[str] = None,
                             ) -> List[Optional[Type[DjangoModel]]]:
         """
+        Converts all models from the module.
 
         :param module:
+            The module from where the models will be converted.
         :param from_current_module:
             Sets the module equal to the module from which the function is called.
         :param exclude_models:
+            Models that will not be converted.
         :param convert_to_same_module:
+            Means that the conversion will take place in the same module(which is passed to the function)."
         :param app_name:
+            App name for Django App.
+            By default, this is the name of the folder from which the function is called.
         :param models_file:
+            Filename in Django App to store models.
+            By default, this is the name of the file from which the function is called.
         :param module_name:
-        :return:
+            Module name to Django Model file.
+            Default: {app_name}.{models_file}
+
+        :return: List of DjangoModel or None
         """
         _converter_models: List[Type[DjangoModel]] = []
 
