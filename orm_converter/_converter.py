@@ -128,6 +128,7 @@ class TortoiseToDjango(IConverter):
 
         try:
             converted_model = cls._generate_django_model(
+                tortoise_model=model,
                 model_name=model.__name__,
                 module_name=module_name,
                 model_meta=django_meta,
@@ -198,12 +199,14 @@ class TortoiseToDjango(IConverter):
         return _converted_models
 
     @classmethod
-    def _generate_django_model(cls, model_name: str,
+    def _generate_django_model(cls, tortoise_model: Type[TortoiseModel],
+                               model_name: str,
                                fields: Dict[str, DjangoField],
                                model_meta: Type['DjangoModel.Meta'],
                                module_name: str) -> Type[DjangoModel]:
         django_model_attrs = {
             '__module__': module_name,
+            '__str__': tortoise_model.__str__,
             'Meta': model_meta,
             **fields
         }
