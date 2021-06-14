@@ -4,7 +4,7 @@ import os
 from abc import ABC, abstractmethod
 from functools import lru_cache
 from types import ModuleType
-from typing import Type, Dict, Optional, List
+from typing import Type, Dict, Optional, List, Iterable, Any
 
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ImproperlyConfigured
@@ -19,6 +19,9 @@ from tortoise.fields.relational import RelationalField as RelationalTortoiseFiel
 from tortoise.models import ModelMeta
 
 from ._utils import dict_intersection
+
+
+logger = logging.getLogger('orm_converter')
 
 
 class IConverter(ABC):
@@ -58,15 +61,61 @@ class TortoiseToDjango(IConverter):
     @classmethod
     @lru_cache
     def convert(cls, model: Type[TortoiseModel],
+                convert_to_same_module: bool = True,
                 app_name: Optional[str] = None,
-                model_file: Optional[str] = None,
+                models_file: Optional[str] = None,
+                module_name: Optional[str] = None,
                 **fields: DjangoField
                 ) -> Optional[Type[DjangoModel]]:
-        from_file = inspect.getfile(inspect.currentframe().f_back)
-        app_label = app_name or from_file.split(os.sep)[-2]
-        model_file_name = model_file or from_file.split(os.sep)[-1]
+        """
+        Convert TortoiseModel to DjangoModel.
 
-        tortoise_model_meta = model._meta
+        :param model:
+            Tortoise model to convert.
+        :param convert_to_same_module:
+            If "True" models will be converted to the same module:
+            "app_name", "model_file", "module_name" will be equal to the value from the model module.
+        :param app_name:
+            App name for Django App.
+            By default, this is the name of the folder from which the function is called.
+        :param models_file:
+            Filename in Django App to store models.
+            By default, this is the name of the file from which the function is called.
+        :param module_name:
+            Module name to Django Model file.
+            Default: {app_name}.{models_file}
+        :param fields:
+            Redefined or additional DjangoModel fields.
+
+        :return: DjangoModel or None.
+        """
+        if hasattr(model, 'DjangoModel'):
+            return getattr(model, 'DjangoModel')
+
+        if convert_to_same_module:
+            if app_name is None:
+                from django.apps import apps
+
+                raw_app_name = model.__module__.split('.')
+                for django_app_name in apps.app_configs.keys():
+                    if django_app_name in raw_app_name:
+                        app_name = django_app_name
+                        break
+
+            module_name = model.__module__
+
+        if app_name is None:
+            from_file = inspect.getfile(inspect.currentframe().f_back)
+            app_name = from_file.split(os.sep)[-2]
+
+        if module_name is None:
+            if models_file is None:
+                from_file = inspect.getfile(inspect.currentframe().f_back)
+                models_file = from_file.split(os.sep)[-1]
+
+            module_name = f'{app_name}.{models_file.rstrip("py")}'
+
+        tortoise_model_meta = getattr(model, '_meta')
 
         for field_name, field_type in tortoise_model_meta.fields_map.items():
             if field_name == 'id' and tortoise_model_meta.pk is field_type:
@@ -75,62 +124,75 @@ class TortoiseToDjango(IConverter):
                 fields[field_name] = cls._get_django_field(field_type)
 
         django_meta = cls._generate_django_model_meta(
-            app_label=app_label, tortoise_meta=model.Meta)
+            app_name=app_name, tortoise_meta=model.Meta)
 
         try:
-            return cls._generate_django_model(
+            converted_model = cls._generate_django_model(
                 model_name=model.__name__,
-                model_file=model_file_name,
+                module_name=module_name,
                 model_meta=django_meta,
                 fields=fields)
+            setattr(model, 'DjangoModel', converted_model)
+            return converted_model
         except ImproperlyConfigured:
             return None
 
     @classmethod
     @lru_cache
     def convert_from_module(cls, module: Optional[ModuleType] = None,
-                            from_current_file: bool = False,
-                            exclude_models: List[Type[TortoiseModel]] = None,
+                            from_current_module: bool = False,
+                            exclude_models: Iterable[Type[TortoiseModel]] = tuple(),
+                            convert_to_same_module: bool = True,
                             app_name: Optional[str] = None,
-                            models_file: Optional[str] = None
+                            models_file: Optional[str] = None,
+                            module_name: Optional[str] = None,
                             ) -> List[Optional[Type[DjangoModel]]]:
+        """
+
+        :param module:
+        :param from_current_module:
+            Sets the module equal to the module from which the function is called.
+        :param exclude_models:
+        :param convert_to_same_module:
+        :param app_name:
+        :param models_file:
+        :param module_name:
+        :return:
+        """
         _converter_models: List[Type[DjangoModel]] = []
 
-        from_file = inspect.getfile(inspect.currentframe().f_back)
-        app_label = app_name or from_file.split(os.sep)[-2]
-        models_file_name = models_file or from_file.split(os.sep)[-1]
+        if module is None:
+            if from_current_module:
+                module = inspect.getmodule(inspect.currentframe().f_back)
+            else:
+                # TODO: replace with custom exception
+                raise ValueError('You must specify either "module" or "from_current_module"')
 
-        if module is not None:
-            module_members = inspect.getmembers(module)
-        elif from_current_file:
-            module = inspect.getmodule(inspect.currentframe().f_back)
-            module_members = inspect.getmembers(module)
-        else:
-            raise ValueError('')
-
-        for member in module_members:
-            if exclude_models and member[1] in exclude_models:
+        for member in inspect.getmembers(module):
+            if member[1] in exclude_models:
                 continue
             if inspect.isclass(member[1]):
                 if type(member[1]) is ModelMeta:
-                    if getattr(member[1], '_meta', {}) and \
-                            getattr(member[1]._meta, 'fields_map', {}):
+                    meta = getattr(member[1], '_meta', {})
+                    fields_map = getattr(meta, 'fields_map', {})
+                    if fields_map:
                         _converter_models.append(
                             cls.convert(
                                 model=member[1],
-                                app_name=app_label,
-                                model_file=models_file_name))
+                                convert_to_same_module=convert_to_same_module,
+                                app_name=app_name,
+                                models_file=models_file,
+                                module_name=module_name))
         return _converter_models
 
     @classmethod
     def _generate_django_model(cls, model_name: str,
                                fields: Dict[str, DjangoField],
                                model_meta: Type['DjangoModel.Meta'],
-                               model_file: str = 'models') -> Type[DjangoModel]:
-        model_file = model_file.rstrip('.py')
+                               module_name: str) -> Type[DjangoModel]:
 
         django_model_attrs = {
-            '__module__': f'{model_meta.app_label}.{model_file}',
+            '__module__': module_name,
             'Meta': model_meta,
             **fields
         }
@@ -138,25 +200,27 @@ class TortoiseToDjango(IConverter):
         return type(model_name, (DjangoModel,), django_model_attrs)  # type: ignore
 
     @classmethod
-    def _generate_django_model_meta(cls, app_label: str,
+    def _generate_django_model_meta(cls, app_name: str,
                                     tortoise_meta: Type[TortoiseModel.Meta]
                                     ) -> Type['DjangoModel.Meta']:
         class Meta:
-            db_table = getattr(tortoise_meta, 'table')
+            app_label = app_name
 
-        Meta.app_label = app_label
+        for name, value in tortoise_meta.__dict__.items():  # type: str, Any
+            if name in ('__dict__', ):
+                continue
 
-        if getattr(tortoise_meta, 'verbose_name', None):
-            Meta.verbose_name = getattr(tortoise_meta, 'verbose_name')
-
-        if getattr(tortoise_meta, 'verbose_name_plural', None):
-            Meta.verbose_name_plural = getattr(tortoise_meta, 'verbose_name_plural')
+            if name == 'table':
+                Meta.db_table = value
+            else:
+                setattr(Meta, name, value)
 
         return Meta
 
     @classmethod
     def _get_django_field_type(cls, tortoise_field: TortoiseField) -> Type[DjangoField]:
         field = cls.FIELDS_RATIO.get(type(tortoise_field))
+
         if field is None:
             raise ValueError(f'{tortoise_field} is not supported')
 
@@ -167,7 +231,7 @@ class TortoiseToDjango(IConverter):
         django_field = cls._get_django_field_type(tortoise_field)
 
         if isinstance(tortoise_field, RelationalTortoiseField):
-            tortoise_field.to = getattr(tortoise_field, 'model_name').split('.')[1]
+            tortoise_field.to = getattr(tortoise_field, 'model_name')
             tortoise_field.on_delete = cls._get_on_delete_function(tortoise_field.on_delete)  # type: ignore
 
         tortoise_field.primary_key = getattr(tortoise_field, 'pk', False)
