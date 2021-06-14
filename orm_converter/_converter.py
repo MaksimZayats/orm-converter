@@ -169,7 +169,7 @@ class TortoiseToDjango(IConverter):
 
         :return: List of DjangoModel or None
         """
-        _converter_models: List[Type[DjangoModel]] = []
+        _converted_models: List[Type[DjangoModel]] = []
 
         if module is None:
             if from_current_module:
@@ -186,14 +186,14 @@ class TortoiseToDjango(IConverter):
                     meta = getattr(member[1], '_meta', {})
                     fields_map = getattr(meta, 'fields_map', {})
                     if fields_map:
-                        _converter_models.append(
+                        _converted_models.append(
                             cls.convert(
                                 model=member[1],
                                 convert_to_same_module=convert_to_same_module,
                                 app_name=app_name,
                                 models_file=models_file,
                                 module_name=module_name))
-        return _converter_models
+        return _converted_models
 
     @classmethod
     def _generate_django_model(cls, model_name: str,
