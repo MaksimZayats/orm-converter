@@ -21,7 +21,6 @@ from .exceptions import ConfigurationError, FieldIsNotSupported
 
 from ._utils import dict_intersection
 
-
 logger = logging.getLogger('orm_converter')
 
 
@@ -221,7 +220,7 @@ class TortoiseToDjango(IConverter):
             app_label = app_name
 
         for name, value in tortoise_meta.__dict__.items():  # type: str, Any
-            if name in ('__dict__', ):
+            if name in ('__dict__',):
                 continue
 
             if name == 'table':
@@ -251,11 +250,14 @@ class TortoiseToDjango(IConverter):
         django_field_kwargs['primary_key'] = getattr(tortoise_field, 'pk', False)
         django_field_kwargs['verbose_name'] = getattr(tortoise_field, 'description', None)
 
-        if getattr(tortoise_field, 'default') is None:
+        if django_field_kwargs.get('default') is None:
             django_field_kwargs['default'] = NOT_PROVIDED
 
-        args =\
-            set(inspect.getfullargspec(django_field).args) |\
+        if django_field_kwargs.get('validators'):
+            django_field_kwargs.pop('validators')
+
+        args = \
+            set(inspect.getfullargspec(django_field).args) | \
             set(inspect.getfullargspec(DjangoField).args)
 
         django_field_kwargs = dict_intersection(django_field_kwargs, dict(zip(args, args)))
