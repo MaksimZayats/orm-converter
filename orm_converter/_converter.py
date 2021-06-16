@@ -65,7 +65,7 @@ class TortoiseToDjango(IConverter):
                 app_name: Optional[str] = None,
                 models_file: Optional[str] = None,
                 module_name: Optional[str] = None,
-                **fields: DjangoField
+                **redefined_fields: DjangoField
                 ) -> Optional[Type[DjangoModel]]:
         """
         Convert TortoiseModel to DjangoModel.
@@ -83,13 +83,18 @@ class TortoiseToDjango(IConverter):
         :param module_name:
             Module name to Django Model file.
             Default: {app_name}.{models_file}
-        :param fields:
-            Redefined or additional DjangoModel fields.
+        :param redefined_fields:
+            Redefined DjangoModel fields.
 
         :return: DjangoModel or None.
         """
         if hasattr(model, 'DjangoModel'):
             return getattr(model, 'DjangoModel')
+
+        if hasattr(model, 'DjangoFields'):
+            for name, value in model.DjangoFields.__dict__.items():
+                if isinstance(value, DjangoField):
+                    redefined_fields[name] = value
 
         if convert_to_same_module:
             if app_name is None:
@@ -114,13 +119,16 @@ class TortoiseToDjango(IConverter):
 
             module_name = f'{app_name}.{models_file.rstrip("py")}'
 
+        converted_fields: Dict[str, DjangoField] = {}
         tortoise_model_meta = getattr(model, '_meta')
 
         for field_name, field_type in tortoise_model_meta.fields_map.items():
             if field_name == 'id' and tortoise_model_meta.pk is field_type:
                 continue
-            if field_name not in fields:
-                fields[field_name] = cls._get_django_field(field_type)
+            if field_name not in redefined_fields.keys():
+                converted_fields[field_name] = cls._get_django_field(field_type)
+            else:
+                converted_fields[field_name] = redefined_fields[field_name]
 
         django_meta = cls._generate_django_model_meta(
             app_name=app_name, tortoise_meta=model.Meta)
@@ -131,7 +139,7 @@ class TortoiseToDjango(IConverter):
                 model_name=model.__name__,
                 module_name=module_name,
                 model_meta=django_meta,
-                fields=fields)
+                fields=converted_fields)
             setattr(model, 'DjangoModel', converted_model)
             return converted_model
         except ImproperlyConfigured:
