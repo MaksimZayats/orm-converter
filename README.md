@@ -77,7 +77,7 @@ from django.db import models as django_models
 class ExampleModel(Model):
     example_field = fields.TextField()
     
-    class DjangoModel:
+    class DjangoModel(django_models.Model):
        """
        In class "DjangoModel", you can specify the converted model.
        """
