@@ -89,7 +89,8 @@ class TortoiseToDjango(IConverter):
         :return: DjangoModel or None.
         """
         if hasattr(model, 'DjangoModel'):
-            return getattr(model, 'DjangoModel')
+            _DjangoModel = getattr(model, 'DjangoModel')
+            return _DjangoModel
 
         if hasattr(model, 'DjangoFields'):
             for name, value in model.DjangoFields.__dict__.items():

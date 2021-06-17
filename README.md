@@ -65,21 +65,3 @@ TortoiseToDjango.convert(tortoise_models.ExampleModel)
 # or
 TortoiseToDjango.convert_from_module(tortoise_models)
 ```
-
-### 3. Redefining model
-```python
-# tortoise_models.py
-from tortoise import fields
-from tortoise.models import Model
-
-from django.db import models as django_models
-   
-class ExampleModel(Model):
-    example_field = fields.TextField()
-    
-    class DjangoModel(django_models.Model):
-       """
-       In class "DjangoModel", you can specify the converted model.
-       """
-       example_field = django_models.TextField()
-```
