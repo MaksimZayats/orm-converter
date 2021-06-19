@@ -88,6 +88,10 @@ class TortoiseToDjango(IConverter):
 
         :return: DjangoModel or None.
         """
+        if hasattr(model, 'Meta') and getattr(model.Meta, 'abstract', False):
+            # Ignore abstract models
+            return
+
         if hasattr(model, 'DjangoModel'):
             return getattr(model, 'DjangoModel')
 
