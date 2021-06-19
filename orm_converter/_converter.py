@@ -265,6 +265,9 @@ class TortoiseToDjango(IConverter):
         if django_field_kwargs.get('default') is None:
             django_field_kwargs['default'] = NOT_PROVIDED
 
+        if django_field_kwargs.get('null') is True:
+            django_field_kwargs['blank'] = True
+
         if django_field_kwargs.get('validators'):
             django_field_kwargs.pop('validators')
 

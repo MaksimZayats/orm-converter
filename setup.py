@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='orm_converter',
-    version='0.1.1a',
+    version='0.1.2a',
     packages=['orm_converter'],
     url='',
     license='',
