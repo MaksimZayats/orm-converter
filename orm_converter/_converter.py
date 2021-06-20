@@ -259,6 +259,8 @@ class TortoiseToDjango(IConverter):
             django_field_kwargs['to'] = getattr(tortoise_field, 'model_name')
             django_field_kwargs['on_delete'] = cls._get_on_delete_function(tortoise_field.on_delete)  # type: ignore
 
+            django_field_kwargs['related_name'] = django_field_kwargs.get('related_name') or None
+
         django_field_kwargs['primary_key'] = getattr(tortoise_field, 'pk', False)
         django_field_kwargs['verbose_name'] = getattr(tortoise_field, 'description', None)
 
