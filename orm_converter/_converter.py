@@ -93,7 +93,8 @@ class TortoiseToDjango(IConverter):
             return
 
         if hasattr(model, 'DjangoModel'):
-            return getattr(model, 'DjangoModel')
+            if getattr(model.DjangoModel, '_from_model') == model:
+                return getattr(model, 'DjangoModel')
 
         if hasattr(model, 'DjangoFields'):
             for name, value in model.DjangoFields.__dict__.items():
@@ -144,6 +145,7 @@ class TortoiseToDjango(IConverter):
                 module_name=module_name,
                 model_meta=django_meta,
                 fields=converted_fields)
+            setattr(converted_model, '_from_model', model)
             setattr(model, 'DjangoModel', converted_model)
             return converted_model
         except ImproperlyConfigured:
