@@ -128,7 +128,8 @@ class TortoiseToDjango(IConverter):
         tortoise_model_meta = getattr(model, '_meta')
 
         for field_name, field_type in tortoise_model_meta.fields_map.items():
-            if field_name == 'id' and tortoise_model_meta.pk is field_type:
+            if field_name == 'id' and type(field_type) == tortoise_fields.IntField and \
+                    tortoise_model_meta.pk is field_type:
                 continue
             if field_name not in redefined_fields.keys():
                 converted_fields[field_name] = cls._get_django_field(field_type)
