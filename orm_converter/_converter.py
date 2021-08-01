@@ -6,7 +6,6 @@ from functools import lru_cache
 from types import ModuleType
 from typing import Type, Dict, Optional, List, Iterable, Any
 
-from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models as django_models
 from django.db.models import Model as DjangoModel, Field as DjangoField, NOT_PROVIDED
@@ -52,7 +51,7 @@ class TortoiseToDjango(IConverter):
         tortoise_fields.DecimalField: django_fields.DecimalField,
         tortoise_fields.FloatField: django_fields.FloatField,
         tortoise_fields.IntField: django_fields.IntegerField,
-        tortoise_fields.JSONField: JSONField,
+        tortoise_fields.JSONField: django_models.JSONField,
         tortoise_fields.SmallIntField: django_fields.SmallIntegerField,
         tortoise_fields.TextField: django_fields.TextField,
         tortoise_fields.UUIDField: django_fields.UUIDField,
