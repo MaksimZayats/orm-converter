@@ -1,0 +1,2 @@
+tortoise-orm~=0.17.6
+Django~=3.2.6

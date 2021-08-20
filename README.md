@@ -1,85 +1,83 @@
-# orm_converter
+# Orm-Converter
 
 ## Installation
-`pip install git+https://github.com/MaxZayats/orm-converter`
+```bash
+pip install orm-converter
+```
 
-## Possible conversions
+or
+
+```bash
+pip install git+https://github.com/MaxZayats/orm-converter`
+```
+
+***
+
+## Available conversions
 1. `TortoiseORM` -> `DjangoORM`
 
+***
+
 ## Usage Examples
-### 1. Simple Usages
+### 1. Simple Usage
 ```python
-# tortoise_models.py
+from orm_converter.tortoise_to_django import ConvertedModel
 from tortoise import fields
-from tortoise.models import Model
-   
-class ExampleModel(Model):
+from tortoise.models import Model as TortoiseModel
+
+
+class ExampleModel(TortoiseModel, ConvertedModel):
     example_field = fields.IntField()
+
+
+ExampleModel.DjangoModel  # <- Converted Django Model
 ```
 
-To convert only One model:
+### 2. Redefining fields/attributes
 ```python
-# django_models.py
-from orm_converter import TortoiseToDjango
-from .tortoise_models import ExampleModel
+from custom_django_fields import CustomDjangoField
+from custom_tortoise_fields import CustomTortoiseField
+from orm_converter.tortoise_to_django import (ConvertedModel,
+                                              RedefinedDjangoAttributes)
+from tortoise.models import Model as TortoiseModel
 
-ConvertedModel = TortoiseToDjango.convert(ExampleModel)
-```
 
-To convert all models from module:
-```python
-# django_models.py
-from orm_converter import TortoiseToDjango
-from . import tortoise_models
-
-TortoiseToDjango.convert_from_module(tortoise_models)
-# All models from "tortoise_models" will be converted
-```
-
-### 2. Redefining fields
-```python
-# tortoise_models.py
-from .custom_tortoise_fields import CustomTortoiseField
-from .custom_django_fields import CustomDjangoField
-from tortoise.models import Model
-   
-class ExampleModel(Model):
+class ExampleModel(TortoiseModel, ConvertedModel):
     custom_field = CustomTortoiseField()
-    
-    class DjangoFields:
-       """
-       In class "DjangoFields", you can redefine your tortoise fields to django fields.
-       You can use this if you have a custom fields
-       Or if "orm_converter" converts fields incorrectly.
-       """
-       custom_field = CustomDjangoField()
+
+    class RedefinedAttributes(RedefinedDjangoAttributes):
+        """
+        In this class you can redefine your tortoise attributes to django attributes.
+        You can use this if you have a custom fields
+        Or if `orm_converter` converts fields incorrectly.
+        """
+
+        custom_field = CustomDjangoField()
 ```
 
+### 3. Adding custom converters
 ```python
-# django_models.py
-from orm_converter import TortoiseToDjango
-from . import tortoise_models
+from custom_django_fields import CustomDjangoField
+from custom_tortoise_fields import CustomTortoiseField
+from orm_converter.tortoise_to_django import (BaseTortoiseFieldConverter,
+                                              ConvertedModel, Converter)
+from tortoise.models import Model as TortoiseModel
 
-# Convert model with redefined fields just like default model
-TortoiseToDjango.convert(tortoise_models.ExampleModel)
-# or
-TortoiseToDjango.convert_from_module(tortoise_models)
-```
 
-### 3. Redefining model
-```python
-# tortoise_models.py
-from tortoise import fields
-from tortoise.models import Model
+class MyCustomFieldConverter(BaseTortoiseFieldConverter):
+    ORIGINAL_FIELD_TYPE = CustomTortoiseField
+    CONVERTED_FIELD_TYPE = CustomDjangoField
 
-from django.db import models as django_models
-   
-class ExampleModel(Model):
-    example_field = fields.TextField()
-    
-    class DjangoModel(django_models.Model):
-       """
-       In class "DjangoModel", you can specify the converted model.
-       """
-       example_field = django_models.TextField()
+    def _reformat_kwargs(self):
+        super()._reformat_kwargs()
+        # change field kwargs here
+
+        self._original_field_kwargs["custom_kwarg"] = "Django"
+
+
+Converter.add_converters(MyCustomFieldConverter)
+
+
+class ExampleModel(TortoiseModel, ConvertedModel):
+    custom_field = CustomTortoiseField(custom_kwarg="Tortoise")
 ```

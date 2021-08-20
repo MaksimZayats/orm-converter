@@ -1,0 +1,2 @@
+class FieldIsNotSupported(Exception):
+    pass
