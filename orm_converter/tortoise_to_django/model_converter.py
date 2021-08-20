@@ -24,8 +24,7 @@ class RedefinedDjangoAttributes:
 
 
 class Converter(BaseConverter):
-    _FIELDS_RATIO: Dict[Type[TortoiseField],
-                        Type[field_converter.BaseTortoiseFieldConverter]] = {  # type: ignore
+    _FIELDS_RATIO: Dict[Type[TortoiseField], Type[field_converter.BaseTortoiseFieldConverter]] = {  # type: ignore
         tortoise_fields.BigIntField: field_converter.BigIntFieldConverter,
         tortoise_fields.BinaryField: field_converter.BinaryFieldConverter,
         tortoise_fields.BooleanField: field_converter.BooleanFieldConverter,
@@ -39,7 +38,6 @@ class Converter(BaseConverter):
         tortoise_fields.SmallIntField: field_converter.SmallIntFieldConverter,
         tortoise_fields.TextField: field_converter.TextFieldConverter,
         tortoise_fields.UUIDField: field_converter.UUIDFieldConverter,
-
         tortoise_relational_fields.ForeignKeyFieldInstance: field_converter.ForeignKeyFieldConverter,
         tortoise_relational_fields.OneToOneFieldInstance: field_converter.OneToOneFieldConverter,
         tortoise_relational_fields.ManyToManyFieldInstance: field_converter.ManyToManyFieldConverter,
@@ -77,9 +75,7 @@ class Converter(BaseConverter):
             converter = self._FIELDS_RATIO.get(type(field))
 
             if converter is None:
-                raise FieldIsNotSupported(
-                    f"{type(field)} is not supported field."
-                )
+                raise FieldIsNotSupported(f"{type(field)} is not supported field.")
 
             converted_fields[field_name] = converter(field).converted_field
 

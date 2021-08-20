@@ -5,9 +5,11 @@ from typing import Dict, Type
 class BaseFieldConverter(ABC):
     def __init__(self, original_field: object):
         if not isinstance(original_field, self.ORIGINAL_FIELD_TYPE):
-            raise TypeError("Invalid field type\n"
-                            f'Expected: "{self.ORIGINAL_FIELD_TYPE}"\n'
-                            f'Got: "{type(original_field)}"')
+            raise TypeError(
+                "Invalid field type\n"
+                f'Expected: "{self.ORIGINAL_FIELD_TYPE}"\n'
+                f'Got: "{type(original_field)}"'
+            )
 
         self._original_field = original_field
         self._original_field_kwargs = original_field.__dict__.copy()

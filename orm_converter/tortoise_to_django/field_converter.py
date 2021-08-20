@@ -30,16 +30,13 @@ class BaseTortoiseFieldConverter(bases.BaseFieldConverter, ABC):
 
         if spec.varkw:
             base_field_spec = getfullargspec(django_fields.Field)
-            kwargs = kwargs | dict(
-                zip(base_field_spec.args[1:], base_field_spec.args[1:]))
+            kwargs = kwargs | dict(zip(base_field_spec.args[1:], base_field_spec.args[1:]))
 
         return dict_intersection(self._original_field_kwargs, kwargs)
 
     def _reformat_kwargs(self):
-        self._original_field_kwargs["primary_key"] =\
-            self._original_field_kwargs.get("pk", False)
-        self._original_field_kwargs["verbose_name"] =\
-            self._original_field_kwargs.get("description", None)
+        self._original_field_kwargs["primary_key"] = self._original_field_kwargs.get("pk", False)
+        self._original_field_kwargs["verbose_name"] = self._original_field_kwargs.get("description", None)
 
         if self._original_field_kwargs.get("null", False) is True:
             self._original_field_kwargs["blank"] = True
@@ -64,11 +61,11 @@ class BaseTortoiseRelationalFieldConverter(BaseTortoiseFieldConverter, ABC):
 
         self._original_field_kwargs["to"] = self._original_field_kwargs.get("model_name")
 
-        self._original_field_kwargs["on_delete"] =\
-            self._on_delete_functions.get(self._original_field_kwargs.get("on_delete"))
+        self._original_field_kwargs["on_delete"] = self._on_delete_functions.get(
+            self._original_field_kwargs.get("on_delete")
+        )
 
-        self._original_field_kwargs["related_name"] =\
-            self._original_field_kwargs.get("related_name")
+        self._original_field_kwargs["related_name"] = self._original_field_kwargs.get("related_name")
 
 
 # Default Fields

@@ -22,10 +22,7 @@ setup(
     url="https://github.com/MaximZayats/orm-converter",
     license="MIT",
     author="Maxim",
-    install_requires=[
-        "tortoise-orm~=0.17.6",
-        "Django~=3.2.6"
-    ],
+    install_requires=["tortoise-orm~=0.17.6", "Django~=3.2.6"],
     author_email="maximzayats1@gmail.com",
     keywords=[
         "python",
@@ -36,7 +33,5 @@ setup(
         "tortoise-orm",
         "django-orm",
         "admin-panel",
-    ]
+    ],
 )
-
-
