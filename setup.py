@@ -2,7 +2,7 @@ import os
 
 from setuptools import find_packages, setup
 
-VERSION = "0.2.0b"
+VERSION = "0.2.1b0"
 
 
 def get_readme() -> str:

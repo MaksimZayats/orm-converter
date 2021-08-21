@@ -1,6 +1,7 @@
 [![PyPI version](https://badge.fury.io/py/orm-converter.svg)](https://badge.fury.io/py/orm-converter)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
+[![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
 
 # Orm-Converter
 
@@ -38,18 +39,20 @@ ExampleModel.DjangoModel  # <- Converted Django Model
 ```
 
 ### 2. Redefining fields/attributes
+
 ```python
+from orm_converter.tortoise_to_django import (ConvertedModel,
+                                              RedefinedAttributes)
+from tortoise.models import Model as TortoiseModel
+
 from custom_django_fields import CustomDjangoField
 from custom_tortoise_fields import CustomTortoiseField
-from orm_converter.tortoise_to_django import (ConvertedModel,
-                                              RedefinedDjangoAttributes)
-from tortoise.models import Model as TortoiseModel
 
 
 class ExampleModel(TortoiseModel, ConvertedModel):
     custom_field = CustomTortoiseField()
 
-    class RedefinedAttributes(RedefinedDjangoAttributes):
+    class RedefinedAttributes(RedefinedAttributes):
         """
         In this class you can redefine your tortoise attributes to django attributes.
         You can use this if you have a custom fields
@@ -61,11 +64,12 @@ class ExampleModel(TortoiseModel, ConvertedModel):
 
 ### 3. Adding custom converters
 ```python
-from custom_django_fields import CustomDjangoField
-from custom_tortoise_fields import CustomTortoiseField
 from orm_converter.tortoise_to_django import (BaseTortoiseFieldConverter,
                                               ConvertedModel, Converter)
 from tortoise.models import Model as TortoiseModel
+
+from custom_django_fields import CustomDjangoField
+from custom_tortoise_fields import CustomTortoiseField
 
 
 class MyCustomFieldConverter(BaseTortoiseFieldConverter):
