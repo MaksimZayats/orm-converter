@@ -15,7 +15,7 @@ from orm_converter.shared.exceptions import FieldIsNotSupported
 from orm_converter.tortoise_to_django import field_converter
 
 
-class RedefinedDjangoAttributes:
+class RedefinedAttributes:
     """
     In this class you can redefine your tortoise attributes to django attributes.
     You can use this if you have a custom fields
@@ -49,7 +49,7 @@ class Converter(BaseConverter):
         self._redefined_attributes = dict()
 
         for attribute in self._original_model_type_attributes.values():
-            if isclass(attribute) and issubclass(attribute, RedefinedDjangoAttributes):
+            if isclass(attribute) and issubclass(attribute, RedefinedAttributes):
                 self._redefined_attributes |= dict(attribute.__dict__)
 
     @property
@@ -118,3 +118,16 @@ class ConvertedModel(metaclass=_ConvertedModelMeta):
 
     class Meta:
         abstract = True
+
+
+class ExampleModel(TortoiseModel, ConvertedModel):
+    custom_field = 1
+
+    class RedefinedAttributes(RedefinedAttributes):
+        """
+        In this class you can redefine your tortoise attributes to django attributes.
+        You can use this if you have a custom fields
+        Or if `orm_converter` converts fields incorrectly.
+        """
+
+        custom_field = 2
