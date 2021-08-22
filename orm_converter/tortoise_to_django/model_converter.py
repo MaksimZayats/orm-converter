@@ -46,7 +46,7 @@ class Converter(BaseConverter):
     def __init__(self, original_model_type: Type[TortoiseModel]):
         super().__init__(original_model_type)
 
-        self._redefined_attributes = dict()
+        self._redefined_attributes = {}
 
         for attribute in self._original_model_type_attributes.values():
             if isclass(attribute) and issubclass(attribute, RedefinedAttributes):
@@ -101,10 +101,10 @@ class Converter(BaseConverter):
         meta_attributes.pop("__dict__", None)
         meta_attributes.pop("table", None)
 
-        return type("Meta", tuple(), meta_attributes)  # type: ignore
+        return type("Meta", (), meta_attributes)  # type: ignore
 
 
-class _ConvertedModelMeta(BaseConvertedModelMeta, TortoiseModelMeta):
+class ConvertedModelMeta(BaseConvertedModelMeta, TortoiseModelMeta):
     default_converter = Converter
     model_type_to_convert = TortoiseModel
 
@@ -113,21 +113,8 @@ class _ConvertedModelMeta(BaseConvertedModelMeta, TortoiseModelMeta):
         return cls._converted_model  # type: ignore
 
 
-class ConvertedModel(metaclass=_ConvertedModelMeta):
+class ConvertedModel(metaclass=ConvertedModelMeta):
     DjangoModel: Optional[Type[DjangoModel]]
 
     class Meta:
         abstract = True
-
-
-class ExampleModel(TortoiseModel, ConvertedModel):
-    custom_field = 1
-
-    class RedefinedAttributes(RedefinedAttributes):
-        """
-        In this class you can redefine your tortoise attributes to django attributes.
-        You can use this if you have a custom fields
-        Or if `orm_converter` converts fields incorrectly.
-        """
-
-        custom_field = 2

@@ -30,7 +30,7 @@ class BaseTortoiseFieldConverter(bases.BaseFieldConverter, ABC):
 
         if spec.varkw:
             base_field_spec = getfullargspec(django_fields.Field)
-            kwargs = kwargs | dict(zip(base_field_spec.args[1:], base_field_spec.args[1:]))
+            kwargs.update(zip(base_field_spec.args[1:], base_field_spec.args[1:]))
 
         return dict_intersection(self._original_field_kwargs, kwargs)
 
@@ -49,7 +49,7 @@ class BaseTortoiseFieldConverter(bases.BaseFieldConverter, ABC):
 
 
 class BaseTortoiseRelationalFieldConverter(BaseTortoiseFieldConverter, ABC):
-    _on_delete_functions: Dict[str, Callable] = {
+    _on_delete_functions_ratio: Dict[str, Callable] = {
         "CASCADE": django_models.CASCADE,
         "RESTRICT": django_models.RESTRICT,
         "SET NULL": django_models.SET_NULL,
@@ -61,7 +61,7 @@ class BaseTortoiseRelationalFieldConverter(BaseTortoiseFieldConverter, ABC):
 
         self._original_field_kwargs["to"] = self._original_field_kwargs.get("model_name")
 
-        self._original_field_kwargs["on_delete"] = self._on_delete_functions.get(
+        self._original_field_kwargs["on_delete"] = self._on_delete_functions_ratio.get(
             self._original_field_kwargs.get("on_delete")
         )
 
