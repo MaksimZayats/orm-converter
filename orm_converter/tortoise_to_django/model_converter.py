@@ -72,6 +72,10 @@ class Converter(BaseConverter):
                 converted_fields[field_name] = self._redefined_attributes.get(field_name)
                 continue
 
+            if field_name == "id" and field is model_meta.pk and isinstance(field, tortoise_fields.IntField):
+                # skip default tortoise id(pk) field
+                continue
+
             converter = self._FIELDS_RATIO.get(type(field))
 
             if converter is None:
