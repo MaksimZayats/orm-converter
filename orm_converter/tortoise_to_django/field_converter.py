@@ -1,5 +1,4 @@
 from abc import ABC
-from collections import Callable
 from inspect import getfullargspec
 from typing import Dict
 
@@ -49,7 +48,7 @@ class BaseTortoiseFieldConverter(bases.BaseFieldConverter, ABC):
 
 
 class BaseTortoiseRelationalFieldConverter(BaseTortoiseFieldConverter, ABC):
-    _on_delete_functions_ratio: Dict[str, Callable] = {
+    _on_delete_functions_ratio: Dict[str, callable] = {
         "CASCADE": django_models.CASCADE,
         "RESTRICT": django_models.RESTRICT,
         "SET NULL": django_models.SET_NULL,
