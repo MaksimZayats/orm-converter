@@ -1,5 +1,5 @@
 from inspect import isclass
-from typing import Dict, Optional, Type
+from typing import Any, Dict, Optional, Type
 
 from django.db.models import Model as DjangoModel
 from django.db.models.fields import Field as DjangoField
@@ -46,7 +46,7 @@ class Converter(BaseConverter):
     def __init__(self, original_model_type: Type[TortoiseModel]):
         super().__init__(original_model_type)
 
-        self._redefined_attributes = {}
+        self._redefined_attributes: Dict[str, Any] = {}
 
         for attribute in self._original_model_type_attributes.values():
             if isclass(attribute) and issubclass(attribute, RedefinedAttributes):
