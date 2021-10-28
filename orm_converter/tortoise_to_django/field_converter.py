@@ -36,6 +36,7 @@ class BaseTortoiseFieldConverter(bases.BaseFieldConverter, ABC):
     def _reformat_kwargs(self):
         self._original_field_kwargs["primary_key"] = self._original_field_kwargs.get("pk", False)
         self._original_field_kwargs["verbose_name"] = self._original_field_kwargs.get("description", None)
+        self._original_field_kwargs["db_index"] = self._original_field_kwargs["index"]
 
         if self._original_field_kwargs.get("null", False) is True:
             self._original_field_kwargs["blank"] = True
