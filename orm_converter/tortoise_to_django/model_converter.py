@@ -50,7 +50,7 @@ class Converter(BaseConverter):
 
         for attribute in self._original_model_type_attributes.values():
             if isclass(attribute) and issubclass(attribute, RedefinedAttributes):
-                self._redefined_attributes |= dict(attribute.__dict__)
+                self._redefined_attributes.update(attribute.__dict__)
 
     @property
     def converted_model(self) -> Optional[Type[DjangoModel]]:
@@ -59,8 +59,8 @@ class Converter(BaseConverter):
         if meta is None:
             raise RuntimeError("Can't convert this model")
 
-        converted_fields = self._get_converted_fields(model_meta=meta)
-        converted_attributes = self._get_converted_attributes(model_meta=meta) | converted_fields
+        converted_attributes = self._get_converted_attributes(model_meta=meta)
+        converted_attributes.update(self._get_converted_fields(model_meta=meta))
 
         return type(self._original_model_type.__name__, (DjangoModel,), converted_attributes)  # type: ignore
 
@@ -86,7 +86,8 @@ class Converter(BaseConverter):
         return converted_fields
 
     def _get_converted_attributes(self, model_meta: MetaInfo) -> dict:
-        attributes = self._original_model_type_attributes | self._redefined_attributes
+        attributes = self._original_model_type_attributes
+        attributes.update(self._redefined_attributes)
 
         attributes.pop("_meta", None)
         attributes["Meta"] = self._get_converted_meta_class(model_meta=model_meta)
